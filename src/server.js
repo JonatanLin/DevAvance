@@ -14,9 +14,11 @@ createServer(async (req, res) => {
             switch (endpoint) {
                 case 'GET:/blockchain':
                     results = await liste(req, res, url)
+                    console.log('GET:/blockchain')
                     break
                 case 'POST:/blockchain':
                     results = await create(req, res)
+                    console.log('POST:/blockchain')
                     break
                 default :
                     res.writeHead(404)

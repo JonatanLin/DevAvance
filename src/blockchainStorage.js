@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto'
 
 
 /* Chemin de stockage des blocks */
-const path = ''
+const path = 'TP/hachage-tp1/data/blockchain.json'
 
 /**
  * Mes définitions
