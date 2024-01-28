@@ -1,11 +1,12 @@
 import {readFile, writeFile} from 'node:fs/promises'
 import {getDate, monSecret} from "./divers.js";
-import {NotFoundError} from "./errors.js";
 import {createHash} from 'node:crypto'
+import {v4 as uuidv4} from 'uuid';
 
 
 /* Chemin de stockage des blocks */
-const path = 'TP/hachage-tp1/data/blockchain.json'
+const path = './data/blockchain.json'
+const HASH_ALGORITHM = 'sha256'
 
 /**
  * Mes définitions
@@ -23,7 +24,12 @@ const path = 'TP/hachage-tp1/data/blockchain.json'
  * @return {Promise<any>}
  */
 export async function findBlocks() {
-    // A coder
+    try {
+        const data = await readFile(path)
+        return JSON.parse(data)
+    } catch (e) {
+        return []
+    }
 }
 
 /**
@@ -32,7 +38,9 @@ export async function findBlocks() {
  * @return {Promise<Block[]>}
  */
 export async function findBlock(partialBlock) {
-    // A coder
+    const blocks = await findBlocks()
+    const block = blocks.find(block => block.id === partialBlock.id)
+    return block || null;
 }
 
 /**
@@ -40,7 +48,8 @@ export async function findBlock(partialBlock) {
  * @return {Promise<Block|null>}
  */
 export async function findLastBlock() {
-    // A coder
+    const blocks = await findBlocks()
+    return blocks[blocks.length - 1] || null
 }
 
 /**
@@ -49,6 +58,49 @@ export async function findLastBlock() {
  * @return {Promise<Block[]>}
  */
 export async function createBlock(contenu) {
-    // A coder
+    const currentDate = getDate();
+    const id = uuidv4();
+    const lastBlock = await findLastBlock();
+    const previousBlockString = JSON.stringify(lastBlock);
+    const previousBlockHash = createHash(HASH_ALGORITHM).update(previousBlockString).digest('hex');
+
+    const block = {
+        id: id,
+        nom: contenu.nom,
+        don: contenu.don,
+        date: currentDate,
+        hash: createHash(HASH_ALGORITHM).update(previousBlockHash + id + contenu.nom + contenu.don + currentDate).digest('hex')
+    };
+
+    const blocks = await findBlocks();
+    blocks.push(block);
+
+    await writeFile(path, JSON.stringify(blocks));
+    return block;
 }
 
+
+/**
+ * Vérifie l'intégrité de la chaîne en s'assurant que les blocs restent liés par leurs valeurs de hachage.
+ * @return {Promise<boolean>}
+ */
+export async function verifBlocks() {
+    const blocks = await findBlocks();
+
+    if (blocks.length <= 1) {
+        return true;
+    }
+
+    for (let i = 1; i < blocks.length; i++) {
+        const previousBlock = blocks[i - 1];
+        const currentBlock = blocks[i];
+
+        const previousBlockString = JSON.stringify(previousBlock);
+        const previousBlockHash = createHash(HASH_ALGORITHM).update(previousBlockString).digest('hex');
+
+        if (previousBlockHash !== currentBlock.hash) {
+            return false;
+        }
+    }
+    return true;
+}

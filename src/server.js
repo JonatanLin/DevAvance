@@ -2,6 +2,7 @@
 import {createServer} from "node:http"
 import {create, liste} from "./blockchain.js";
 import {NotFoundError} from "./errors.js";
+import { verifBlocks } from "./blockchainStorage.js";
 
 createServer(async (req, res) => {
         res.setHeader('Content-Type', 'application/json')
@@ -14,12 +15,16 @@ createServer(async (req, res) => {
             switch (endpoint) {
                 case 'GET:/blockchain':
                     results = await liste(req, res, url)
-                    console.log('GET:/blockchain')
+                    console.log('le serveur marche en get');
                     break
                 case 'POST:/blockchain':
                     results = await create(req, res)
-                    console.log('POST:/blockchain')
+                    console.log('le serveur marche en post');
                     break
+                case 'GET:/verifBlocks':
+                    const isChainValid = await verifBlocks();
+                    res.write(JSON.stringify({ isChainValid }));
+                    break;
                 default :
                     res.writeHead(404)
             }
